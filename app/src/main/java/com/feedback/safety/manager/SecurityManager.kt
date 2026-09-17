@@ -49,7 +49,7 @@ class SecurityManager(context: Context) {
         val random = SecureRandom()
         val saltBytes = ByteArray(16)
         random.nextBytes(saltBytes)
-        val salt = saltBytes.joinToString("") { "%02x".format(it) }
+        val salt = saltBytes.joinToString("") { "%02x".format(it.toInt() and 0xFF) }
         
         val hash = hashPin(pin, salt)
         prefs.edit()
@@ -98,7 +98,7 @@ class SecurityManager(context: Context) {
         val spec = PBEKeySpec(pin.toCharArray(), salt, 10000, 256)
         val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
         val hashBytes = factory.generateSecret(spec).encoded
-        return hashBytes.joinToString("") { "%02x".format(it) }
+        return hashBytes.joinToString("") { "%02x".format(it.toInt() and 0xFF) }
     }
     
     fun shouldLock(): Boolean {
