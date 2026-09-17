@@ -20,6 +20,15 @@ fun PinScreen(
     var isConfirming by remember { mutableStateOf(false) }
     var errorMsg by remember { mutableStateOf<String?>(null) }
     val coroutineScope = rememberCoroutineScope()
+    val securityManager = remember { com.feedback.safety.manager.SecurityManager(androidx.compose.ui.platform.LocalContext.current) }
+    var lockoutRemaining by remember { mutableStateOf(securityManager.getLockoutRemainingSeconds()) }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            lockoutRemaining = securityManager.getLockoutRemainingSeconds()
+            kotlinx.coroutines.delay(1000)
+        }
+    }
 
     val title = when (mode) {
         PinMode.CREATE -> if (isConfirming) "Confirm Passcode" else "Create 4-Digit Passcode"
@@ -47,7 +56,10 @@ fun PinScreen(
             }
         }
 
-        if (errorMsg != null) {
+        if (lockoutRemaining > 0) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Text("Locked out. Try again in ${lockoutRemaining}s", color = MaterialTheme.colorScheme.error)
+        } else if (errorMsg != null) {
             Spacer(modifier = Modifier.height(16.dp))
             Text(errorMsg!!, color = MaterialTheme.colorScheme.error)
         }
@@ -66,6 +78,7 @@ fun PinScreen(
                 for (key in row) {
                     Button(
                         onClick = {
+                            if (lockoutRemaining > 0) return@Button
                             errorMsg = null
                             when (key) {
                                 "C" -> {

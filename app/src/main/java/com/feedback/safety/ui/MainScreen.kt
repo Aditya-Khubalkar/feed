@@ -7,6 +7,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.PowerManager
 import android.provider.Settings
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -37,6 +38,11 @@ fun MainScreen(
     var showChangePin by remember { mutableStateOf(false) }
     var showNewPin by remember { mutableStateOf(false) }
     var hasPin by remember { mutableStateOf(securityManager.hasPin()) }
+    
+    var isHidden by remember { mutableStateOf(deviceManager.isAppHidden()) }
+    var showHideRecoveryWarning by remember { mutableStateOf(false) }
+    var showHidePinPrompt by remember { mutableStateOf(false) }
+    var showShowPinPrompt by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager
@@ -45,6 +51,7 @@ fun MainScreen(
             isOwner = deviceManager.isDeviceOwner() || deviceManager.isProfileOwner()
             isIgnoringBatteryOpt = pm.isIgnoringBatteryOptimizations(context.packageName)
             hasPin = securityManager.hasPin()
+            isHidden = deviceManager.isAppHidden()
             delay(1000)
         }
     }
@@ -73,6 +80,71 @@ fun MainScreen(
             onCancel = { showNewPin = false }
         )
         return
+    }
+
+    if (showHidePinPrompt) {
+        PinScreen(
+            mode = PinMode.ENTER,
+            onSuccess = { pin ->
+                if (securityManager.verifyPin(pin)) {
+                    showHidePinPrompt = false
+                    val success = deviceManager.setAppHidden(true)
+                    if (success) {
+                        isHidden = true
+                        Toast.makeText(context, "App hidden from launcher", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(context, "Failed to hide app", Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    Toast.makeText(context, "Incorrect PIN", Toast.LENGTH_SHORT).show()
+                }
+            },
+            onCancel = { showHidePinPrompt = false }
+        )
+        return
+    }
+
+    if (showShowPinPrompt) {
+        PinScreen(
+            mode = PinMode.ENTER,
+            onSuccess = { pin ->
+                if (securityManager.verifyPin(pin)) {
+                    showShowPinPrompt = false
+                    val success = deviceManager.setAppHidden(false)
+                    if (success) {
+                        isHidden = false
+                        Toast.makeText(context, "App restored to launcher", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(context, "Failed to restore app", Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    Toast.makeText(context, "Incorrect PIN", Toast.LENGTH_SHORT).show()
+                }
+            },
+            onCancel = { showShowPinPrompt = false }
+        )
+        return
+    }
+
+    if (showHideRecoveryWarning) {
+        AlertDialog(
+            onDismissRequest = { showHideRecoveryWarning = false },
+            title = { Text("Important: Recovery Instructions") },
+            text = { Text("Hiding the app will remove it from the launcher. To recover the app, you MUST use an explicit intent via ADB:\n\nadb shell am start -n com.feedback.safety/.MainActivity\n\nDo you understand and have you saved these instructions?") },
+            confirmButton = {
+                Button(onClick = {
+                    showHideRecoveryWarning = false
+                    showHidePinPrompt = true
+                }) {
+                    Text("I Understand")
+                }
+            },
+            dismissButton = {
+                Button(onClick = { showHideRecoveryWarning = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 
     Scaffold(
@@ -110,6 +182,46 @@ fun MainScreen(
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("Device Owner")
                         Text(if (isOwner) "Enabled" else "Disabled")
+                    }
+                }
+            }
+
+            // App Visibility Section
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp)) {
+                    Text("App Visibility", style = MaterialTheme.typography.titleMedium)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Launcher Status")
+                        Text(if (isHidden) "Hidden" else "Visible")
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    if (!isHidden) {
+                        Button(
+                            onClick = {
+                                if (isOwner) {
+                                    showHideRecoveryWarning = true
+                                } else {
+                                    Toast.makeText(context, "Device Owner or Profile Owner required to hide app", Toast.LENGTH_LONG).show()
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Hide App from App Drawer")
+                        }
+                    } else {
+                        Button(
+                            onClick = {
+                                if (isOwner) {
+                                    showShowPinPrompt = true
+                                } else {
+                                    Toast.makeText(context, "Device Owner or Profile Owner required to show app", Toast.LENGTH_LONG).show()
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Show App")
+                        }
                     }
                 }
             }

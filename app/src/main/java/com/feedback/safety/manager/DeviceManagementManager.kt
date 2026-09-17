@@ -27,4 +27,11 @@ class DeviceManagementManager(private val context: Context) {
         }
         return false
     }
+
+    fun isAppHidden(): Boolean {
+        if (isDeviceOwner() || isProfileOwner()) {
+            return dpm.isApplicationHidden(adminComponent, context.packageName)
+        }
+        return false
+    }
 }
