@@ -103,7 +103,7 @@ import java.util.Locale
 class CaptureStorageManager(private val context: Context) {
     
     private val rootDir: File by lazy {
-        val dir = File(context.getExternalFilesDir(null), "SafetyCapture")
+        val dir = File(context.filesDir, "SafetyCapture")
         if (!dir.exists()) dir.mkdirs()
         File(dir, ".nomedia").apply { if (!exists()) createNewFile() }
         dir
@@ -168,7 +168,7 @@ import java.io.File
 
 class RetentionManager(private val context: Context) {
     fun cleanupOldCaptures(retentionHours: Long) {
-        val rootDir = File(context.getExternalFilesDir(null), "SafetyCapture")
+        val rootDir = File(context.filesDir, "SafetyCapture")
         if (!rootDir.exists()) return
         
         val dirs = rootDir.listFiles { f -> f.isDirectory } ?: return
