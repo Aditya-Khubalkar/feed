@@ -11,7 +11,7 @@ import java.util.Locale
 class CaptureStorageManager(private val context: Context) {
     
     private val rootDir: File by lazy {
-        val dir = File(context.filesDir, "SafetyCapture")
+        val dir = File(context.getExternalFilesDir(null) ?: context.filesDir, "SafetyCapture")
         if (!dir.exists()) dir.mkdirs()
         File(dir, ".nomedia").apply { if (!exists()) createNewFile() }
         dir

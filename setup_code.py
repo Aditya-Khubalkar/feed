@@ -68,24 +68,21 @@ class InstagramDetectionManager(private val context: Context) {
     fun isInstagramForeground(): Boolean {
         val usageStatsManager = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
         val time = System.currentTimeMillis()
-        val stats = usageStatsManager.queryUsageStats(
-            UsageStatsManager.INTERVAL_DAILY,
-            time - 1000 * 10, // Check last 10 seconds
-            time
-        )
+        val events = usageStatsManager.queryEvents(time - 1000 * 60, time)
+        val event = android.app.usage.UsageEvents.Event()
+        var currentForeground: String? = null
         
-        var foregroundApp: String? = null
-        var lastTimeUsed = 0L
-        
-        if (stats != null) {
-            for (usageStats in stats) {
-                if (usageStats.lastTimeUsed > lastTimeUsed) {
-                    foregroundApp = usageStats.packageName
-                    lastTimeUsed = usageStats.lastTimeUsed
+        while (events.hasNextEvent()) {
+            events.getNextEvent(event)
+            if (event.eventType == android.app.usage.UsageEvents.Event.ACTIVITY_RESUMED || event.eventType == android.app.usage.UsageEvents.Event.MOVE_TO_FOREGROUND) {
+                currentForeground = event.packageName
+            } else if (event.eventType == android.app.usage.UsageEvents.Event.ACTIVITY_PAUSED || event.eventType == android.app.usage.UsageEvents.Event.MOVE_TO_BACKGROUND) {
+                if (event.packageName == currentForeground) {
+                    currentForeground = null
                 }
             }
         }
-        return foregroundApp == "com.instagram.android"
+        return currentForeground == "com.instagram.android"
     }
 }
 ''',
@@ -103,7 +100,7 @@ import java.util.Locale
 class CaptureStorageManager(private val context: Context) {
     
     private val rootDir: File by lazy {
-        val dir = File(context.filesDir, "SafetyCapture")
+        val dir = File(context.getExternalFilesDir(null) ?: context.filesDir, "SafetyCapture")
         if (!dir.exists()) dir.mkdirs()
         File(dir, ".nomedia").apply { if (!exists()) createNewFile() }
         dir
@@ -168,7 +165,7 @@ import java.io.File
 
 class RetentionManager(private val context: Context) {
     fun cleanupOldCaptures(retentionHours: Long) {
-        val rootDir = File(context.filesDir, "SafetyCapture")
+        val rootDir = File(context.getExternalFilesDir(null) ?: context.filesDir, "SafetyCapture")
         if (!rootDir.exists()) return
         
         val dirs = rootDir.listFiles { f -> f.isDirectory } ?: return

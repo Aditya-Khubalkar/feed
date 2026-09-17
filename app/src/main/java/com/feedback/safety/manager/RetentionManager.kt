@@ -5,7 +5,7 @@ import java.io.File
 
 class RetentionManager(private val context: Context) {
     fun cleanupOldCaptures(retentionHours: Long) {
-        val rootDir = File(context.filesDir, "SafetyCapture")
+        val rootDir = File(context.getExternalFilesDir(null) ?: context.filesDir, "SafetyCapture")
         if (!rootDir.exists()) return
         
         val dirs = rootDir.listFiles { f -> f.isDirectory } ?: return
