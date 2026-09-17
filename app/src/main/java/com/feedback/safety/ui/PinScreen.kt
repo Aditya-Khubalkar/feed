@@ -78,39 +78,40 @@ fun PinScreen(
                 for (key in row) {
                     Button(
                         onClick = {
-                            if (lockoutRemaining > 0) return@Button
-                            errorMsg = null
-                            when (key) {
-                                "C" -> {
-                                    if (isConfirming) confirmPin = "" else pin = ""
-                                }
-                                "<" -> {
-                                    if (isConfirming && confirmPin.isNotEmpty()) confirmPin = confirmPin.dropLast(1)
-                                    else if (!isConfirming && pin.isNotEmpty()) pin = pin.dropLast(1)
-                                }
-                                else -> {
-                                    if (isConfirming && confirmPin.length < 4) {
-                                        confirmPin += key
-                                        if (confirmPin.length == 4) {
-                                            if (confirmPin == pin) {
-                                                onSuccess(pin)
-                                            } else {
-                                                errorMsg = "Pins do not match"
-                                                confirmPin = ""
-                                                pin = ""
-                                                isConfirming = false
-                                            }
-                                        }
-                                    } else if (!isConfirming && pin.length < 4) {
-                                        pin += key
-                                        if (pin.length == 4) {
-                                            if (mode == PinMode.CREATE) {
-                                                isConfirming = true
-                                            } else {
-                                                onSuccess(pin)
-                                                coroutineScope.launch {
-                                                    delay(500)
+                            if (lockoutRemaining <= 0) {
+                                errorMsg = null
+                                when (key) {
+                                    "C" -> {
+                                        if (isConfirming) confirmPin = "" else pin = ""
+                                    }
+                                    "<" -> {
+                                        if (isConfirming && confirmPin.isNotEmpty()) confirmPin = confirmPin.dropLast(1)
+                                        else if (!isConfirming && pin.isNotEmpty()) pin = pin.dropLast(1)
+                                    }
+                                    else -> {
+                                        if (isConfirming && confirmPin.length < 4) {
+                                            confirmPin += key
+                                            if (confirmPin.length == 4) {
+                                                if (confirmPin == pin) {
+                                                    onSuccess(pin)
+                                                } else {
+                                                    errorMsg = "Pins do not match"
+                                                    confirmPin = ""
                                                     pin = ""
+                                                    isConfirming = false
+                                                }
+                                            }
+                                        } else if (!isConfirming && pin.length < 4) {
+                                            pin += key
+                                            if (pin.length == 4) {
+                                                if (mode == PinMode.CREATE) {
+                                                    isConfirming = true
+                                                } else {
+                                                    onSuccess(pin)
+                                                    coroutineScope.launch {
+                                                        delay(500)
+                                                        pin = ""
+                                                    }
                                                 }
                                             }
                                         }
