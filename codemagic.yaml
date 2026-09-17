@@ -1,0 +1,14 @@
+workflows:
+  android-debug:
+    name: Android APK
+    max_build_duration: 60
+
+    scripts:
+      - name: Set SDK path
+        script: echo "sdk.dir=$ANDROID_SDK_ROOT" > "$CM_BUILD_DIR/local.properties"
+
+      - name: Build APK
+        script: ./gradlew assembleDebug
+
+    artifacts:
+      - app/build/outputs/**/*.apk
