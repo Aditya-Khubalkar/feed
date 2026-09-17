@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Feedback</string>
+    <string name="app_name">Digilocker</string>
     <string name="notification_channel_name">Safety Monitor</string>
     <string name="notification_channel_desc">Active screen monitoring notifications</string>
     <string name="notification_title">Feedback screen monitoring is active</string>
