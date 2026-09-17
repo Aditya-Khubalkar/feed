@@ -315,9 +315,7 @@ class ScreenCaptureService : Service() {
     private fun startCaptureLoop() {
         serviceScope.launch {
             while (isActive) {
-                if (instagramDetector.isInstagramForeground()) {
-                    captureFrame()
-                }
+                captureFrame()
                 delay(2000)
             }
         }
