@@ -57,13 +57,15 @@ class ScreenCaptureService : Service() {
                 if (resultCode != 0 && resultData != null) {
                     startForeground(1, createNotification())
                     startCapture(resultCode, resultData)
+                } else {
+                    startForeground(1, createNotification())
                 }
             }
             ACTION_STOP -> {
                 stopSelf()
             }
         }
-        return START_NOT_STICKY
+        return START_STICKY
     }
 
     private fun createNotification(): Notification {

@@ -53,4 +53,7 @@ dependencies {
     
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
+
+    implementation("androidx.lifecycle:lifecycle-process:2.6.2")
+    implementation("androidx.security:security-crypto-ktx:1.1.0-alpha06")
 }
