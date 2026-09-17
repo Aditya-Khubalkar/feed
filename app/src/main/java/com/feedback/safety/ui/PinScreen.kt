@@ -20,7 +20,8 @@ fun PinScreen(
     var isConfirming by remember { mutableStateOf(false) }
     var errorMsg by remember { mutableStateOf<String?>(null) }
     val coroutineScope = rememberCoroutineScope()
-    val securityManager = remember { com.feedback.safety.manager.SecurityManager(androidx.compose.ui.platform.LocalContext.current) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val securityManager = remember { com.feedback.safety.manager.SecurityManager(context) }
     var lockoutRemaining by remember { mutableStateOf(securityManager.getLockoutRemainingSeconds()) }
 
     LaunchedEffect(Unit) {
